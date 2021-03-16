@@ -2,6 +2,7 @@ package main;
 
 import handlers.Checker;
 import handlers.CheckerImpl;
+import handlers.PostfixTransform;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -24,8 +25,10 @@ public class InputHandler implements ApplicationContextAware {
         //System.out.println("Please input braces set or quit for exit: ");
         String line;
         while (!(line = scan.next()).equalsIgnoreCase("quit")) {
-            CheckerImpl checker = context.getBean("checker", CheckerImpl.class);
-            checker.read(line);
+            //CheckerImpl checker = context.getBean("checker", CheckerImpl.class);
+            //checker.read(line);
+            PostfixTransform postFix = context.getBean("postfix", PostfixTransform.class);
+            postFix.transform(line);
         }
         System.out.println("Bye!");
     }

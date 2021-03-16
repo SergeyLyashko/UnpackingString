@@ -27,11 +27,11 @@ public class CheckerImpl {
 
     private void check(char ch) {
         switch (ch){
-            case '[':
-                bracketStack.pop();
-                break;
             case ']':
                 bracketStack.push(ch);
+                break;
+            case '[':
+                bracketStack.pop();
                 break;
             default:
                 checkOtherChar(ch);
@@ -43,14 +43,6 @@ public class CheckerImpl {
             buildCountBracketsContent(Character.getNumericValue(ch));
         }else {
             pushSymbolToStack(ch);
-        }
-    }
-
-    void pushSymbolToStack(char ch){
-        if(!bracketStack.empty()) {
-            resultStack.push(String.valueOf(ch));
-        }else {
-            stringBuilder.append(ch);
         }
     }
 
@@ -71,6 +63,14 @@ public class CheckerImpl {
             builder.append(pop);
         }
         return builder.toString();
+    }
+
+    void pushSymbolToStack(char ch){
+        if(!bracketStack.empty()) {
+            resultStack.push(String.valueOf(ch));
+        }else {
+            stringBuilder.append(ch);
+        }
     }
 
     // TODO
