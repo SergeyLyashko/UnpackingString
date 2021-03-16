@@ -1,10 +1,12 @@
 package handlers;
 
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import java.util.Stack;
 
 @Service("postfix")
+@Scope("prototype")
 public class PostfixTransform {
 
     private final Stack<Character> operatorStack;
@@ -21,11 +23,13 @@ public class PostfixTransform {
         for (char ch : charArray) {
             checkSymbol(ch);
         }
-        while (!operatorStack.empty()){
-            out += operatorStack.pop();
+        /*while (!operatorStack.empty()){
+            Character pop = operatorStack.pop();
+            out += pop;
         }
         // TODO
-        System.out.println(out);
+        System.out.println(out);*/
+        operatorStack.forEach(System.out::print);
     }
 
     private void checkSymbol(char ch) {
@@ -34,7 +38,7 @@ public class PostfixTransform {
                 operatorStack.push(ch);
                 break;
             case ']':
-                extractOperators(ch);
+                unpack();
                 break;
             default:
                 checkOtherChar(ch);
@@ -42,11 +46,13 @@ public class PostfixTransform {
     }
 
     private void checkOtherChar(char ch) {
+        operatorStack.push(ch);
+        /*
         if(Character.isDigit(ch)){
             addOperator(ch);
         }else {
-            out += ch;
-        }
+            tempStack.push(ch);
+        }*/
     }
 
     private void addOperator(char ch) {
@@ -62,22 +68,32 @@ public class PostfixTransform {
         operatorStack.push(ch);
     }
 
-    private void extractOperators(char ch) {
+    private void unpack() {
+        String temp = "";
         while (!operatorStack.empty()){
             char pop = operatorStack.pop();
             if(pop == '['){
-                unpack();
-                //char top = operatorStack.pop();
-                //out+= top;
                 break;
             }else {
-                out += pop;
+                temp += pop;
             }
         }
+        String reverse = new StringBuilder(temp).reverse().toString();
+        System.out.println("reverse: "+reverse);
+        unpackBracketsContent(reverse);
     }
 
-    private void unpack() {
-        char top = operatorStack.pop();
-        out+= top;
+    private void unpackBracketsContent(String temp) {
+        String unpack = "";
+        Character pop = operatorStack.pop();
+        if(Character.isDigit(pop)){
+            int count = Character.getNumericValue(pop);
+            while (count-->0){
+                unpack += temp;
+            }
+        }
+        for (char ch: unpack.toCharArray()){
+            operatorStack.push(ch);
+        }
     }
 }
