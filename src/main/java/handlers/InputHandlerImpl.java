@@ -1,5 +1,6 @@
 package handlers;
 
+import exceptions.ContentDigitPackingException;
 import exceptions.NoCloseStringPackException;
 import exceptions.NoOpenStringPackException;
 import exceptions.NoSuchSizePackingException;
@@ -32,23 +33,28 @@ class InputHandlerImpl implements InputHandler, ApplicationContextAware {
 
     @Override
     public void handle() {
-        printer.print("This is app for unpacked string format example: 2[xyz]2[abc] = xyzxyzabcabc");
-        printer.print("Supported validation of parameters & unpacking number factor > 9.");
-        printer.print("Please input packed string or quit for exit: ");
+        printHeader();
         String packedString;
         while (!(packedString = scanner.next()).equalsIgnoreCase("quit")) {
             Unpacking unpacking = context.getBean("unpacking", Unpacking.class);
             try {
                 String unpack = unpacking.unpack(packedString);
                 printer.print("unpack: " + unpack);
-            } catch (NoOpenStringPackException | NoCloseStringPackException | NoSuchSizePackingException e) {
-                printer.printError(e.toString());
-            } catch (NumberFormatException e){
-                printer.printError("Error: this unpacking factor beyond reasonable limits.");
+            } catch (NoOpenStringPackException | NoCloseStringPackException | NoSuchSizePackingException | ContentDigitPackingException exception) {
+                printer.printError(exception.toString());
+            } catch (NumberFormatException exception){
+                printer.printError(exception+" - this unpacking factor beyond reasonable limits.");
+            } finally {
+                printer.print("Please input packed string or quit for exit: ");
             }
-            printer.print("Please input packed string or quit for exit: ");
         }
         printer.print("Bye!");
+    }
+
+    private void printHeader(){
+        printer.print("This is app for unpacked string format example: 2[xyz]2[abc] = xyzxyzabcabc");
+        printer.print("Supported validation of parameters & unpacking number factor > 9.");
+        printer.print("Please input packed string or quit for exit: ");
     }
 
     @Override
