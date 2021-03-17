@@ -10,4 +10,9 @@ class SystemOutputPrinterImpl implements Printer {
     public void print(String string) {
         System.out.println(string);
     }
+
+    @Override
+    public void printError(String error) {
+        System.err.println(error);
+    }
 }

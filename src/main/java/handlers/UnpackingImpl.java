@@ -1,7 +1,9 @@
 package handlers;
 
+import main.Printer;
 import main.Unpacking;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Scope;
@@ -13,38 +15,44 @@ import java.util.Stack;
 @Scope("prototype")
 class UnpackingImpl implements Unpacking, ApplicationContextAware {
 
-    private final Stack<Character> operatorStack;
+    private final Stack<Character> charStack;
     private ApplicationContext context;
+    private Printer printer;
 
     UnpackingImpl() {
-        this.operatorStack = new Stack<>();
+        this.charStack = new Stack<>();
+    }
+
+    @Autowired
+    public void setPrinter(Printer printer){
+        this.printer = printer;
     }
 
     @Override
     public String unpack(String packedString) {
         char[] charArray = packedString.toCharArray();
         for (char ch : charArray) {
-            checkSymbol(ch);
+            fillStack(ch);
         }
         StringBuilder builderUnpackString = context.getBean("stringBuilder", StringBuilder.class);
-        operatorStack.forEach(builderUnpackString::append);
+        charStack.forEach(builderUnpackString::append);
         return builderUnpackString.toString();
     }
 
-    private void checkSymbol(char ch) {
+    private void fillStack(char ch) {
         switch (ch){
             case ']':
                 defineUnpackingContent();
                 break;
             default:
-                operatorStack.push(ch);
+                charStack.push(ch);
         }
     }
 
     private void defineUnpackingContent() {
         StringBuilder contentBuilder = context.getBean("stringBuilder", StringBuilder.class);
-        while (!operatorStack.empty()){
-            char pop = operatorStack.pop();
+        while (!charStack.empty()){
+            char pop = charStack.pop();
             if(pop == '['){
                 break;
             }else {
@@ -57,23 +65,34 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
 
     private void unpackContent(String temp) {
         StringBuilder unpackBuilder = context.getBean("stringBuilder", StringBuilder.class);
-        int size = defineSizeUnpackedContent();
-        while (size-->0){
-            unpackBuilder.append(temp);
+        try {
+            int size = defineSizeUnpackedContent();
+            while (size-->0){
+                unpackBuilder.append(temp);
+            }
+            unpackedReturnToStack(unpackBuilder.toString());
+        } catch (NoSuchSizePackingException e) {
+            printer.printError("Error: Unpacking factor for: ["+temp+"] not specified & will be unpack without this.");
         }
-        unpackedReturnToStack(unpackBuilder.toString());
     }
 
-    private int defineSizeUnpackedContent(){
+    private int defineSizeUnpackedContent() throws NoSuchSizePackingException {
         StringBuilder numberBuilder = context.getBean("stringBuilder", StringBuilder.class);
-        while (!operatorStack.empty()){
-            char peek = operatorStack.peek();
+        while (!charStack.empty()){
+            char peek = charStack.peek();
             if(Character.isDigit(peek)){
-                char pop = operatorStack.pop();
+                char pop = charStack.pop();
                 numberBuilder.append(pop);
             }else {
                 break;
             }
+        }
+        return numberParser(numberBuilder);
+    }
+
+    private int numberParser(StringBuilder numberBuilder) throws NoSuchSizePackingException {
+        if(numberBuilder.length() == 0){
+            throw new NoSuchSizePackingException();
         }
         if(numberBuilder.length() > 1) {
             String number = numberBuilder.reverse().toString();
@@ -84,7 +103,7 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
 
     private void unpackedReturnToStack(String unpack){
         for (char ch: unpack.toCharArray()){
-            operatorStack.push(ch);
+            charStack.push(ch);
         }
     }
 
