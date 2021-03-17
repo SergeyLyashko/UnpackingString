@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Scanner;
 
-@ComponentScan(basePackages = {"handlers", "main"})
+@ComponentScan(basePackages = {"handlers", "main", "out"})
 @Configuration
 public class UnpackingStringConfiguration {
 

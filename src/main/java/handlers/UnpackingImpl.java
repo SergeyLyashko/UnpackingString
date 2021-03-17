@@ -1,35 +1,31 @@
 package handlers;
 
+import main.Unpacking;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import java.util.Stack;
 
-@Service("postfix")
+@Service("unpacking")
 @Scope("prototype")
-public class PostfixTransform {
+class UnpackingImpl implements Unpacking {
 
     private final Stack<Character> operatorStack;
     //private StringBuilder stringBuilder = new StringBuilder();
-    // TODO
-    private String out = "";
 
-    public PostfixTransform() {
+    UnpackingImpl() {
         this.operatorStack = new Stack<>();
     }
 
-    public void transform(String input) {
-        char[] charArray = input.toCharArray();
+    @Override
+    public String unpack(String packedString) {
+        char[] charArray = packedString.toCharArray();
         for (char ch : charArray) {
             checkSymbol(ch);
         }
-        /*while (!operatorStack.empty()){
-            Character pop = operatorStack.pop();
-            out += pop;
-        }
-        // TODO
-        System.out.println(out);*/
-        operatorStack.forEach(System.out::print);
+        StringBuilder builderUnpackString = new StringBuilder();
+        operatorStack.forEach(builderUnpackString::append);
+        return builderUnpackString.toString();
     }
 
     private void checkSymbol(char ch) {
@@ -55,19 +51,6 @@ public class PostfixTransform {
         }*/
     }
 
-    private void addOperator(char ch) {
-        while (!operatorStack.empty()){
-            char pop = operatorStack.pop();
-            if(pop == '['){
-                operatorStack.push(pop);
-                break;
-            }else {
-                out += pop;
-            }
-        }
-        operatorStack.push(ch);
-    }
-
     private void unpack() {
         String temp = "";
         while (!operatorStack.empty()){
@@ -79,8 +62,7 @@ public class PostfixTransform {
             }
         }
         String reverse = new StringBuilder(temp).reverse().toString();
-        System.out.println("reverse: "+reverse);
-        unpackBracketsContent(reverse);
+       unpackBracketsContent(reverse);
     }
 
     private void unpackBracketsContent(String temp) {
