@@ -1,5 +1,8 @@
 package handlers;
 
+import exceptions.NoCloseStringPackException;
+import exceptions.NoOpenStringPackException;
+import exceptions.NoSuchSizePackingException;
 import main.InputHandler;
 import main.Printer;
 import main.Unpacking;
@@ -35,9 +38,13 @@ class InputHandlerImpl implements InputHandler, ApplicationContextAware {
         String packedString;
         while (!(packedString = scanner.next()).equalsIgnoreCase("quit")) {
             Unpacking unpacking = context.getBean("unpacking", Unpacking.class);
-            String unpack = unpacking.unpack(packedString);
-            if(unpack != null) {
+            try {
+                String unpack = unpacking.unpack(packedString);
                 printer.print("unpack: " + unpack);
+            } catch (NoOpenStringPackException | NoCloseStringPackException | NoSuchSizePackingException e) {
+                printer.printError(e.toString());
+            } catch (NumberFormatException e){
+                printer.printError("Error: this unpacking factor beyond reasonable limits.");
             }
             printer.print("Please input packed string or quit for exit: ");
         }

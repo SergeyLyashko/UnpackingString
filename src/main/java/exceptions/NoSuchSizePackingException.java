@@ -3,7 +3,7 @@ package exceptions;
 public class NoSuchSizePackingException extends Exception {
 
     public NoSuchSizePackingException(){
-        super();
+        super("Unpacking factor not specified.");
     }
 
 }

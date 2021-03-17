@@ -3,6 +3,6 @@ package exceptions;
 public class NoCloseStringPackException extends Exception {
 
     public NoCloseStringPackException(){
-        super();
+        super("Package of string not closed.");
     }
 }

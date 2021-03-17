@@ -21,16 +21,23 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
     private static final char START_DEFINE = '[';
     private static final char END_DEFINE = ']';
     private ApplicationContext context;
+
+    /*
     private Printer printer;
 
     @Autowired
     public void setPrinter(Printer printer){
         this.printer = printer;
-    }
+    }*/
 
     @Override
-    public String unpack(String packedString) {
+    public String unpack(String packedString) throws NoCloseStringPackException, NoOpenStringPackException,
+            NoSuchSizePackingException, NumberFormatException {
+
         Stack<Character> stringContentStack = createElementsPackStack(packedString);
+
+        return buildUnpackedString(stringContentStack);
+        /*
         try {
             if(stringContentStack != null && !stringContentStack.empty()) {
                 return buildUnpackedString(stringContentStack);
@@ -39,25 +46,31 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
             printer.printError("Error: package string not closed.");
         }
         return null;
+        */
     }
 
-    private Stack<Character> createElementsPackStack(String packedString){
+    private Stack<Character> createElementsPackStack(String packedString) throws NoOpenStringPackException,
+            NoSuchSizePackingException, NumberFormatException {
         Stack<Character> charStack = null;
         char[] charArray = packedString.toCharArray();
         if(charArray.length != 0){
             charStack = new Stack<>();
             for (char ch : charArray) {
+                fillStack(ch, charStack);
+                /*
                 try {
                     fillStack(ch, charStack);
                 } catch (NoOpenStringPackException e) {
                     printer.printError("Error: package of string wasn't open.");
                 }
+                */
             }
         }
         return charStack;
     }
 
-    private void fillStack(char ch, Stack<Character> charStack) throws NoOpenStringPackException {
+    private void fillStack(char ch, Stack<Character> charStack) throws NoOpenStringPackException,
+            NoSuchSizePackingException, NumberFormatException {
         switch (ch){
             case END_DEFINE:
                 defineUnpackContent(charStack);
@@ -67,20 +80,25 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
         }
     }
 
-    private void defineUnpackContent(Stack<Character> charStack) throws NoOpenStringPackException {
+    private void defineUnpackContent(Stack<Character> charStack) throws NoOpenStringPackException,
+            NoSuchSizePackingException, NumberFormatException {
         StringBuilder contentBuilder = context.getBean("stringBuilder", StringBuilder.class);
         while (!charStack.empty()){
             char pop = charStack.pop();
-            if(pop == START_DEFINE){
+            if(pop == START_DEFINE && charStack.empty()){
+                charStack.push('0');
                 break;
-            }else {
+            }else if(pop == START_DEFINE){
+                break;
+            } else {
                 contentBuilder.append(pop);
             }
         }
         buildContent(contentBuilder, charStack);
     }
 
-    private void buildContent(StringBuilder contentBuilder, Stack<Character> charStack) throws NoOpenStringPackException {
+    private void buildContent(StringBuilder contentBuilder, Stack<Character> charStack) throws NoOpenStringPackException,
+            NoSuchSizePackingException, NumberFormatException {
         if(charStack.empty()){
             throw new NoOpenStringPackException();
         }
@@ -88,7 +106,18 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
         unpackContent(reverse, charStack);
     }
 
-    private void unpackContent(String temp, Stack<Character> charStack) {
+    private void unpackContent(String temp, Stack<Character> charStack) throws NoSuchSizePackingException, NumberFormatException {
+        int size = defineSizeUnpackedContent(charStack);
+        if(size == 0){
+            throw new NoSuchSizePackingException();
+        }
+        StringBuilder unpackBuilder = context.getBean("stringBuilder", StringBuilder.class);
+        while (size-->0){
+            unpackBuilder.append(temp);
+        }
+        unpackedContentReturnToStack(unpackBuilder.toString(), charStack);
+
+        /*
         try {
             int size = defineSizeUnpackedContent(charStack);
             StringBuilder unpackBuilder = context.getBean("stringBuilder", StringBuilder.class);
@@ -99,9 +128,10 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
         } catch (NoSuchSizePackingException e) {
             printer.printError("Error: Unpacking factor for: ["+temp+"] not specified & will be unpack without this.");
         }
+        */
     }
 
-    private int defineSizeUnpackedContent(Stack<Character> charStack) throws NoSuchSizePackingException {
+    private int defineSizeUnpackedContent(Stack<Character> charStack) throws NoSuchSizePackingException, NumberFormatException {
         StringBuilder unpackSizeBuilder = context.getBean("stringBuilder", StringBuilder.class);
         while (!charStack.empty()){
             char peek = charStack.peek();
@@ -121,7 +151,7 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
         }
     }
 
-    private int sizeParser(StringBuilder unpackSizeBuilder) throws NoSuchSizePackingException {
+    private int sizeParser(StringBuilder unpackSizeBuilder) throws NoSuchSizePackingException, NumberFormatException {
         if(unpackSizeBuilder.length() == 0){
             throw new NoSuchSizePackingException();
         }
@@ -130,11 +160,14 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
         }
         if(unpackSizeBuilder.length() > 1) {
             String number = unpackSizeBuilder.reverse().toString();
+            return Integer.parseInt(number);
+            /*
             try {
                 return Integer.parseInt(number);
             }catch (NumberFormatException e){
                 printer.printError("Error: this unpacking factor beyond reasonable limits.");
             }
+            */
         }
         return 0;
     }
