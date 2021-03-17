@@ -16,6 +16,8 @@ import java.util.Stack;
 class UnpackingImpl implements Unpacking, ApplicationContextAware {
 
     private final Stack<Character> charStack;
+    private static final char START_DEFINE = '[';
+    private static final char END_DEFINE = ']';
     private ApplicationContext context;
     private Printer printer;
 
@@ -41,7 +43,7 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
 
     private void fillStack(char ch) {
         switch (ch){
-            case ']':
+            case END_DEFINE:
                 defineUnpackingContent();
                 break;
             default:
@@ -53,7 +55,7 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
         StringBuilder contentBuilder = context.getBean("stringBuilder", StringBuilder.class);
         while (!charStack.empty()){
             char pop = charStack.pop();
-            if(pop == '['){
+            if(pop == START_DEFINE){
                 break;
             }else {
                 contentBuilder.append(pop);
@@ -64,9 +66,9 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
     }
 
     private void unpackContent(String temp) {
-        StringBuilder unpackBuilder = context.getBean("stringBuilder", StringBuilder.class);
         try {
             int size = defineSizeUnpackedContent();
+            StringBuilder unpackBuilder = context.getBean("stringBuilder", StringBuilder.class);
             while (size-->0){
                 unpackBuilder.append(temp);
             }
