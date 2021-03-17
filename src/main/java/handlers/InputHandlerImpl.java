@@ -36,7 +36,9 @@ class InputHandlerImpl implements InputHandler, ApplicationContextAware {
         while (!(packedString = scanner.next()).equalsIgnoreCase("quit")) {
             Unpacking unpacking = context.getBean("unpacking", Unpacking.class);
             String unpack = unpacking.unpack(packedString);
-            printer.print("unpack: "+unpack);
+            if(unpack != null) {
+                printer.print("unpack: " + unpack);
+            }
             printer.print("Please input packed string or quit for exit: ");
         }
         printer.print("Bye!");

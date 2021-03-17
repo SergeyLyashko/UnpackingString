@@ -36,22 +36,25 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
         for (char ch : charArray) {
             fillStack(ch);
         }
-        StringBuilder builderUnpackString = context.getBean("stringBuilder", StringBuilder.class);
-        charStack.forEach(builderUnpackString::append);
-        return builderUnpackString.toString();
+        try {
+            return buildUnpackedString();
+        } catch (NoCloseStringPackException e) {
+            printer.printError("Error: package string not closed.");
+        }
+        return null;
     }
 
     private void fillStack(char ch) {
         switch (ch){
             case END_DEFINE:
-                defineUnpackingContent();
+                defineUnpackContent();
                 break;
             default:
                 charStack.push(ch);
         }
     }
 
-    private void defineUnpackingContent() {
+    private void defineUnpackContent() {
         StringBuilder contentBuilder = context.getBean("stringBuilder", StringBuilder.class);
         while (!charStack.empty()){
             char pop = charStack.pop();
@@ -72,41 +75,52 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
             while (size-->0){
                 unpackBuilder.append(temp);
             }
-            unpackedReturnToStack(unpackBuilder.toString());
+            unpackedContentReturnToStack(unpackBuilder.toString());
         } catch (NoSuchSizePackingException e) {
             printer.printError("Error: Unpacking factor for: ["+temp+"] not specified & will be unpack without this.");
         }
     }
 
     private int defineSizeUnpackedContent() throws NoSuchSizePackingException {
-        StringBuilder numberBuilder = context.getBean("stringBuilder", StringBuilder.class);
+        StringBuilder unpackSizeBuilder = context.getBean("stringBuilder", StringBuilder.class);
         while (!charStack.empty()){
             char peek = charStack.peek();
             if(Character.isDigit(peek)){
                 char pop = charStack.pop();
-                numberBuilder.append(pop);
+                unpackSizeBuilder.append(pop);
             }else {
                 break;
             }
         }
-        return numberParser(numberBuilder);
+        return sizeParser(unpackSizeBuilder);
     }
 
-    private int numberParser(StringBuilder numberBuilder) throws NoSuchSizePackingException {
-        if(numberBuilder.length() == 0){
-            throw new NoSuchSizePackingException();
-        }
-        if(numberBuilder.length() > 1) {
-            String number = numberBuilder.reverse().toString();
-            return Integer.parseInt(number);
-        }
-        return Integer.parseInt(numberBuilder.toString());
-    }
-
-    private void unpackedReturnToStack(String unpack){
+    private void unpackedContentReturnToStack(String unpack){
         for (char ch: unpack.toCharArray()){
             charStack.push(ch);
         }
+    }
+
+    private int sizeParser(StringBuilder unpackSizeBuilder) throws NoSuchSizePackingException {
+        if(unpackSizeBuilder.length() == 0){
+            throw new NoSuchSizePackingException();
+        }
+        if(unpackSizeBuilder.length() > 1) {
+            String number = unpackSizeBuilder.reverse().toString();
+            return Integer.parseInt(number);
+        }
+        return Integer.parseInt(unpackSizeBuilder.toString());
+    }
+
+    private String buildUnpackedString() throws NoCloseStringPackException {
+        StringBuilder builderUnpackString = context.getBean("stringBuilder", StringBuilder.class);
+        for (Character element : charStack) {
+            if (element == START_DEFINE) {
+                throw new NoCloseStringPackException();
+            }
+            builderUnpackString.append(element);
+        }
+        return builderUnpackString.toString();
     }
 
     @Override
