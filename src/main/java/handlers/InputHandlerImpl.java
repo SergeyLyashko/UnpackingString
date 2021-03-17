@@ -30,7 +30,7 @@ class InputHandlerImpl implements InputHandler, ApplicationContextAware {
     @Override
     public void handle() {
         printer.print("This is app for unpacked string format example: 2[xyz]2[abc] = xyzxyzabcabc");
-        printer.print("Supported validation of parameters.");
+        printer.print("Supported validation of parameters & unpacking number factor > 9.");
         printer.print("Please input packed string or quit for exit: ");
         String packedString;
         while (!(packedString = scanner.next()).equalsIgnoreCase("quit")) {

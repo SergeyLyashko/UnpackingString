@@ -1,5 +1,8 @@
 package handlers;
 
+import exceptions.NoCloseStringPackException;
+import exceptions.NoOpenStringPackException;
+import exceptions.NoSuchSizePackingException;
 import main.Printer;
 import main.Unpacking;
 import org.springframework.beans.BeansException;
@@ -15,15 +18,10 @@ import java.util.Stack;
 @Scope("prototype")
 class UnpackingImpl implements Unpacking, ApplicationContextAware {
 
-    private final Stack<Character> charStack;
     private static final char START_DEFINE = '[';
     private static final char END_DEFINE = ']';
     private ApplicationContext context;
     private Printer printer;
-
-    UnpackingImpl() {
-        this.charStack = new Stack<>();
-    }
 
     @Autowired
     public void setPrinter(Printer printer){
@@ -32,29 +30,44 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
 
     @Override
     public String unpack(String packedString) {
-        char[] charArray = packedString.toCharArray();
-        for (char ch : charArray) {
-            fillStack(ch);
-        }
+        Stack<Character> stringContentStack = createElementsPackStack(packedString);
         try {
-            return buildUnpackedString();
+            if(stringContentStack != null && !stringContentStack.empty()) {
+                return buildUnpackedString(stringContentStack);
+            }
         } catch (NoCloseStringPackException e) {
             printer.printError("Error: package string not closed.");
         }
         return null;
     }
 
-    private void fillStack(char ch) {
+    private Stack<Character> createElementsPackStack(String packedString){
+        Stack<Character> charStack = null;
+        char[] charArray = packedString.toCharArray();
+        if(charArray.length != 0){
+            charStack = new Stack<>();
+            for (char ch : charArray) {
+                try {
+                    fillStack(ch, charStack);
+                } catch (NoOpenStringPackException e) {
+                    printer.printError("Error: package of string wasn't open.");
+                }
+            }
+        }
+        return charStack;
+    }
+
+    private void fillStack(char ch, Stack<Character> charStack) throws NoOpenStringPackException {
         switch (ch){
             case END_DEFINE:
-                defineUnpackContent();
+                defineUnpackContent(charStack);
                 break;
             default:
                 charStack.push(ch);
         }
     }
 
-    private void defineUnpackContent() {
+    private void defineUnpackContent(Stack<Character> charStack) throws NoOpenStringPackException {
         StringBuilder contentBuilder = context.getBean("stringBuilder", StringBuilder.class);
         while (!charStack.empty()){
             char pop = charStack.pop();
@@ -64,24 +77,31 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
                 contentBuilder.append(pop);
             }
         }
-        String reverse = contentBuilder.reverse().toString();
-        unpackContent(reverse);
+        buildContent(contentBuilder, charStack);
     }
 
-    private void unpackContent(String temp) {
+    private void buildContent(StringBuilder contentBuilder, Stack<Character> charStack) throws NoOpenStringPackException {
+        if(charStack.empty()){
+            throw new NoOpenStringPackException();
+        }
+        String reverse = contentBuilder.reverse().toString();
+        unpackContent(reverse, charStack);
+    }
+
+    private void unpackContent(String temp, Stack<Character> charStack) {
         try {
-            int size = defineSizeUnpackedContent();
+            int size = defineSizeUnpackedContent(charStack);
             StringBuilder unpackBuilder = context.getBean("stringBuilder", StringBuilder.class);
             while (size-->0){
                 unpackBuilder.append(temp);
             }
-            unpackedContentReturnToStack(unpackBuilder.toString());
+            unpackedContentReturnToStack(unpackBuilder.toString(), charStack);
         } catch (NoSuchSizePackingException e) {
             printer.printError("Error: Unpacking factor for: ["+temp+"] not specified & will be unpack without this.");
         }
     }
 
-    private int defineSizeUnpackedContent() throws NoSuchSizePackingException {
+    private int defineSizeUnpackedContent(Stack<Character> charStack) throws NoSuchSizePackingException {
         StringBuilder unpackSizeBuilder = context.getBean("stringBuilder", StringBuilder.class);
         while (!charStack.empty()){
             char peek = charStack.peek();
@@ -95,7 +115,7 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
         return sizeParser(unpackSizeBuilder);
     }
 
-    private void unpackedContentReturnToStack(String unpack){
+    private void unpackedContentReturnToStack(String unpack, Stack<Character> charStack){
         for (char ch: unpack.toCharArray()){
             charStack.push(ch);
         }
@@ -105,16 +125,23 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
         if(unpackSizeBuilder.length() == 0){
             throw new NoSuchSizePackingException();
         }
+        if(unpackSizeBuilder.length() == 1){
+            return Integer.parseInt(unpackSizeBuilder.toString());
+        }
         if(unpackSizeBuilder.length() > 1) {
             String number = unpackSizeBuilder.reverse().toString();
-            return Integer.parseInt(number);
+            try {
+                return Integer.parseInt(number);
+            }catch (NumberFormatException e){
+                printer.printError("Error: this unpacking factor beyond reasonable limits.");
+            }
         }
-        return Integer.parseInt(unpackSizeBuilder.toString());
+        return 0;
     }
 
-    private String buildUnpackedString() throws NoCloseStringPackException {
+    private String buildUnpackedString(Stack<Character> stringContentStack) throws NoCloseStringPackException {
         StringBuilder builderUnpackString = context.getBean("stringBuilder", StringBuilder.class);
-        for (Character element : charStack) {
+        for (Character element : stringContentStack) {
             if (element == START_DEFINE) {
                 throw new NoCloseStringPackException();
             }

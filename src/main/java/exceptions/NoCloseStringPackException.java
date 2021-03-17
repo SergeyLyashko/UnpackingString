@@ -1,4 +1,4 @@
-package handlers;
+package exceptions;
 
 public class NoCloseStringPackException extends Exception {
 

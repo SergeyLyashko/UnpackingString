@@ -1,4 +1,4 @@
-package handlers;
+package exceptions;
 
 public class NoSuchSizePackingException extends Exception {
 
