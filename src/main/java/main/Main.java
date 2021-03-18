@@ -9,7 +9,7 @@ public class Main {
     public static void main(String[] args){
 
         ApplicationContext context = new AnnotationConfigApplicationContext(UnpackingStringConfiguration.class);
-        InputHandler inputHandler = context.getBean("inputHandler", InputHandler.class);
-        inputHandler.handle();
+        UnpackingExecutor unpackingExecutor = context.getBean("unpackingExecutor", UnpackingExecutor.class);
+        unpackingExecutor.execute();
     }
 }

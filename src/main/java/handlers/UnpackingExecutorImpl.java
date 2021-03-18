@@ -4,7 +4,7 @@ import exceptions.ContentDigitPackingException;
 import exceptions.NoCloseStringPackException;
 import exceptions.NoOpenStringPackException;
 import exceptions.NoSuchSizePackingException;
-import main.InputHandler;
+import main.UnpackingExecutor;
 import main.Printer;
 import main.Unpacking;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.Scanner;
 
-@Service("inputHandler")
-class InputHandlerImpl implements InputHandler, ApplicationContextAware {
+@Service("unpackingExecutor")
+class UnpackingExecutorImpl implements UnpackingExecutor, ApplicationContextAware {
 
     private ApplicationContext context;
     private Printer printer;
@@ -32,7 +32,7 @@ class InputHandlerImpl implements InputHandler, ApplicationContextAware {
     }
 
     @Override
-    public void handle() {
+    public void execute() {
         printHeader();
         String packedString;
         while (!(packedString = scanner.next()).equalsIgnoreCase("quit")) {
