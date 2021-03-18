@@ -44,7 +44,7 @@ class UnpackingExecutorImpl implements UnpackingExecutor, ApplicationContextAwar
             } catch (NumberFormatException exception){
                 printer.printError(exception+" - this unpacking factor beyond reasonable limits.");
             } finally {
-                printer.print("Please input packed string or quit for exit: ");
+                printer.print("Please input packed string or 'quit' for exit: ");
             }
         }
         printer.print("Bye!");

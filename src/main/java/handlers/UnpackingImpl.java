@@ -16,87 +16,85 @@ import java.util.Stack;
 @Scope("prototype")
 class UnpackingImpl implements Unpacking, ApplicationContextAware {
 
-    private static final char OPEN = '[';
-    private static final char CLOSE = ']';
+    private static final char OPEN_PACK = '[';
+    private static final char CLOSE_PACK = ']';
     private ApplicationContext context;
 
     @Override
     public String unpack(String packedString) throws NoCloseStringPackException, NoOpenStringPackException, NoSuchSizePackingException {
-        Stack<Character> stringContentStack = createElementsPackStack(packedString);
-        return buildUnpackedString(stringContentStack);
+        char[] packedStringAsCharsArray = packedString.toCharArray();
+        Stack<Character> unpackedCharsStack = createUnpackedCharsStack(packedStringAsCharsArray);
+        return buildUnpackedString(unpackedCharsStack);
     }
 
-    private Stack<Character> createElementsPackStack(String packedString) throws NoOpenStringPackException, NoSuchSizePackingException {
-        Stack<Character> charStack = null;
-        char[] charArray = packedString.toCharArray();
-        if(charArray.length != 0){
-            charStack = new Stack<>();
-            for (char ch : charArray) {
-                fillStack(ch, charStack);
+    private Stack<Character> createUnpackedCharsStack(char[] charArray) throws NoOpenStringPackException, NoSuchSizePackingException {
+        Stack<Character> charsStack = new Stack<>();
+        for (char ch : charArray) {
+            if (ch == CLOSE_PACK) {
+                unpackContentToStack(charsStack);
+            } else {
+                charsStack.push(ch);
             }
         }
-        return charStack;
+        return charsStack;
     }
 
-    private void fillStack(char ch, Stack<Character> charStack) throws NoOpenStringPackException, NoSuchSizePackingException {
-        if (ch == CLOSE) {
-            defineUnpackContent(charStack);
-        } else {
-            charStack.push(ch);
+    private void unpackContentToStack(Stack<Character> charStack) throws NoOpenStringPackException, NoSuchSizePackingException {
+        StringBuilder packedContent = buildPackedContent(charStack);
+        if(charStack.empty()){
+            throw new NoOpenStringPackException();
         }
+        String reverse = packedContent.reverse().toString();
+        String unpackSizeFactor = buildUnpackSizeFactor(charStack);
+        int size = Integer.parseInt(unpackSizeFactor);
+        String unpackContent = unpackContent(reverse, size);
+        unpackedContentReturnToStack(unpackContent, charStack);
     }
 
-    private void defineUnpackContent(Stack<Character> charStack) throws NoOpenStringPackException, NoSuchSizePackingException {
+    // TODO charArray ???
+    private StringBuilder buildPackedContent(Stack<Character> charStack) throws NoSuchSizePackingException {
         StringBuilder contentBuilder = context.getBean("stringBuilder", StringBuilder.class);
         while (!charStack.empty()){
             char pop = charStack.pop();
-
-            // TODO ???
-            if(pop == OPEN && charStack.empty()){
-                charStack.push('0');
-                break;
-            }else if(pop == OPEN){
+            if(pop == OPEN_PACK && charStack.empty()){
+                throw new NoSuchSizePackingException();
+            }else if(pop == OPEN_PACK){
                 break;
             } else {
                 contentBuilder.append(pop);
             }
-            
         }
-        buildContent(contentBuilder, charStack);
+        return contentBuilder;
     }
 
-    private void buildContent(StringBuilder contentBuilder, Stack<Character> charStack) throws NoOpenStringPackException, NoSuchSizePackingException {
-        if(charStack.empty()){
-            throw new NoOpenStringPackException();
-        }
-        String reverse = contentBuilder.reverse().toString();
-        unpackContent(reverse, charStack);
-    }
-
-    private void unpackContent(String temp, Stack<Character> charStack) throws NoSuchSizePackingException {
-        int size = defineSizeUnpackedContent(charStack);
+    private String unpackContent(String content, int size) throws NoSuchSizePackingException {
         if(size == 0){
             throw new NoSuchSizePackingException();
         }
         StringBuilder unpackBuilder = context.getBean("stringBuilder", StringBuilder.class);
         while (size-->0){
-            unpackBuilder.append(temp);
+            unpackBuilder.append(content);
         }
-        unpackedContentReturnToStack(unpackBuilder.toString(), charStack);
+        return unpackBuilder.toString();
     }
 
-    private int defineSizeUnpackedContent(Stack<Character> charStack) {
-        StringBuilder unpackSizeBuilder = context.getBean("stringBuilder", StringBuilder.class);
+    private String buildUnpackSizeFactor(Stack<Character> charStack) throws NoSuchSizePackingException {
+        StringBuilder sizeBuilder = context.getBean("stringBuilder", StringBuilder.class);
         while (!charStack.empty()){
             char peek = charStack.peek();
-            if(Character.isDigit(peek)){
-                char pop = charStack.pop();
-                unpackSizeBuilder.append(pop);
-            }else {
+            if(!Character.isDigit(peek)){
                 break;
             }
+            char pop = charStack.pop();
+            sizeBuilder.append(pop);
         }
-        return sizeParser(unpackSizeBuilder);
+        if(sizeBuilder.length() == 0){
+            throw new NoSuchSizePackingException();
+        }
+        if(sizeBuilder.length() > 1) {
+            return sizeBuilder.reverse().toString();
+        }
+        return sizeBuilder.toString();
     }
 
     private void unpackedContentReturnToStack(String unpack, Stack<Character> charStack){
@@ -105,18 +103,10 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
         }
     }
 
-    private int sizeParser(StringBuilder unpackSizeBuilder) {
-        if(unpackSizeBuilder.length() > 1) {
-            String number = unpackSizeBuilder.reverse().toString();
-            return Integer.parseInt(number);
-        }
-        return Integer.parseInt(unpackSizeBuilder.toString());
-    }
-
     private String buildUnpackedString(Stack<Character> stringContentStack) throws NoCloseStringPackException {
         StringBuilder builderUnpackString = context.getBean("stringBuilder", StringBuilder.class);
         for (Character element : stringContentStack) {
-            if (element == OPEN) {
+            if (element == OPEN_PACK) {
                 throw new NoCloseStringPackException();
             }
             builderUnpackString.append(element);
