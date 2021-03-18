@@ -1,7 +1,6 @@
 package handlers;
 
 import configuration.UnpackingStringConfiguration;
-import exceptions.ContentDigitPackingException;
 import exceptions.NoCloseStringPackException;
 import exceptions.NoOpenStringPackException;
 import exceptions.NoSuchSizePackingException;

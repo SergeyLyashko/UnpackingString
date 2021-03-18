@@ -1,6 +1,5 @@
 package handlers;
 
-import exceptions.ContentDigitPackingException;
 import exceptions.NoCloseStringPackException;
 import exceptions.NoOpenStringPackException;
 import exceptions.NoSuchSizePackingException;
@@ -40,7 +39,7 @@ class UnpackingExecutorImpl implements UnpackingExecutor, ApplicationContextAwar
             try {
                 String unpack = unpacking.unpack(packedString);
                 printer.print("unpack: " + unpack);
-            } catch (NoOpenStringPackException | NoCloseStringPackException | NoSuchSizePackingException | ContentDigitPackingException exception) {
+            } catch (NoOpenStringPackException | NoCloseStringPackException | NoSuchSizePackingException exception) {
                 printer.printError(exception.toString());
             } catch (NumberFormatException exception){
                 printer.printError(exception+" - this unpacking factor beyond reasonable limits.");
@@ -54,7 +53,7 @@ class UnpackingExecutorImpl implements UnpackingExecutor, ApplicationContextAwar
     private void printHeader(){
         printer.print("This is app for unpacked string format example: 2[xyz]2[abc] = xyzxyzabcabc");
         printer.print("Supported validation of parameters & unpacking number factor > 9.");
-        printer.print("Please input packed string or quit for exit: ");
+        printer.print("Please input packed string or 'quit' for exit: ");
     }
 
     @Override

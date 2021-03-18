@@ -1,6 +1,5 @@
 package handlers;
 
-import exceptions.ContentDigitPackingException;
 import exceptions.NoCloseStringPackException;
 import exceptions.NoOpenStringPackException;
 import exceptions.NoSuchSizePackingException;
@@ -17,13 +16,12 @@ import java.util.Stack;
 @Scope("prototype")
 class UnpackingImpl implements Unpacking, ApplicationContextAware {
 
-    private static final char START_DEFINE = '[';
-    private static final char END_DEFINE = ']';
+    private static final char OPEN = '[';
+    private static final char CLOSE = ']';
     private ApplicationContext context;
 
     @Override
-    public String unpack(String packedString) throws NoCloseStringPackException, NoOpenStringPackException, NoSuchSizePackingException,
-            ContentDigitPackingException {
+    public String unpack(String packedString) throws NoCloseStringPackException, NoOpenStringPackException, NoSuchSizePackingException {
         Stack<Character> stringContentStack = createElementsPackStack(packedString);
         return buildUnpackedString(stringContentStack);
     }
@@ -41,12 +39,10 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
     }
 
     private void fillStack(char ch, Stack<Character> charStack) throws NoOpenStringPackException, NoSuchSizePackingException {
-        switch (ch){
-            case END_DEFINE:
-                defineUnpackContent(charStack);
-                break;
-            default:
-                charStack.push(ch);
+        if (ch == CLOSE) {
+            defineUnpackContent(charStack);
+        } else {
+            charStack.push(ch);
         }
     }
 
@@ -54,14 +50,17 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
         StringBuilder contentBuilder = context.getBean("stringBuilder", StringBuilder.class);
         while (!charStack.empty()){
             char pop = charStack.pop();
-            if(pop == START_DEFINE && charStack.empty()){
+
+            // TODO ???
+            if(pop == OPEN && charStack.empty()){
                 charStack.push('0');
                 break;
-            }else if(pop == START_DEFINE){
+            }else if(pop == OPEN){
                 break;
             } else {
                 contentBuilder.append(pop);
             }
+            
         }
         buildContent(contentBuilder, charStack);
     }
@@ -86,7 +85,7 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
         unpackedContentReturnToStack(unpackBuilder.toString(), charStack);
     }
 
-    private int defineSizeUnpackedContent(Stack<Character> charStack) throws NoSuchSizePackingException {
+    private int defineSizeUnpackedContent(Stack<Character> charStack) {
         StringBuilder unpackSizeBuilder = context.getBean("stringBuilder", StringBuilder.class);
         while (!charStack.empty()){
             char peek = charStack.peek();
@@ -106,28 +105,19 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
         }
     }
 
-    private int sizeParser(StringBuilder unpackSizeBuilder) throws NoSuchSizePackingException {
-        if(unpackSizeBuilder.length() == 0){
-            throw new NoSuchSizePackingException();
-        }
-        if(unpackSizeBuilder.length() == 1){
-            return Integer.parseInt(unpackSizeBuilder.toString());
-        }
+    private int sizeParser(StringBuilder unpackSizeBuilder) {
         if(unpackSizeBuilder.length() > 1) {
             String number = unpackSizeBuilder.reverse().toString();
             return Integer.parseInt(number);
         }
-        return 0;
+        return Integer.parseInt(unpackSizeBuilder.toString());
     }
 
-    private String buildUnpackedString(Stack<Character> stringContentStack) throws NoCloseStringPackException, ContentDigitPackingException {
+    private String buildUnpackedString(Stack<Character> stringContentStack) throws NoCloseStringPackException {
         StringBuilder builderUnpackString = context.getBean("stringBuilder", StringBuilder.class);
         for (Character element : stringContentStack) {
-            if (element == START_DEFINE) {
+            if (element == OPEN) {
                 throw new NoCloseStringPackException();
-            }
-            if(Character.isDigit(element)){
-                throw new ContentDigitPackingException();
             }
             builderUnpackString.append(element);
         }
