@@ -21,10 +21,6 @@ public class UnpackingExecutorImplTest {
     }
 
     public void executor_not_open_bracket() {
-        ApplicationContext context = new AnnotationConfigApplicationContext(UnpackingStringConfiguration.class);
         UnpackingImpl unpackingSpy = spy(new UnpackingImpl());
-        unpackingSpy.setApplicationContext(context);
-
-
     }
 }

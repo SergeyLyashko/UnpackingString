@@ -20,9 +20,7 @@ public class UnpackingImplTest {
 
     @Test
     public void unpack_valid_string() throws NoSuchSizePackingException, NoOpenStringPackException, NoCloseStringPackException {
-        ApplicationContext context = new AnnotationConfigApplicationContext(UnpackingStringConfiguration.class);
         UnpackingImpl unpackingSpy = spy(new UnpackingImpl());
-        unpackingSpy.setApplicationContext(context);
         String in = "2[3[xz]y]k";
         String out = "xzxzxzyxzxzxzyk";
         when(unpackingSpy.unpack(in)).thenReturn(out);

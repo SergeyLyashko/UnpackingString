@@ -4,21 +4,17 @@ import exceptions.NoCloseStringPackException;
 import exceptions.NoOpenStringPackException;
 import exceptions.NoSuchSizePackingException;
 import main.Unpacking;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
-import java.util.Stack;
+import java.util.*;
 
 @Service("unpacking")
 @Scope("prototype")
-class UnpackingImpl implements Unpacking, ApplicationContextAware {
+class UnpackingImpl implements Unpacking {
 
     private static final char OPEN_PACK = '[';
     private static final char CLOSE_PACK = ']';
-    private ApplicationContext context;
 
     @Override
     public String unpack(String packedString) throws NoCloseStringPackException, NoOpenStringPackException, NoSuchSizePackingException {
@@ -40,20 +36,15 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
     }
 
     private void unpackContentToStack(Stack<Character> charStack) throws NoOpenStringPackException, NoSuchSizePackingException {
-        StringBuilder packedContent = buildPackedContent(charStack);
-        if(charStack.empty()){
-            throw new NoOpenStringPackException();
-        }
-        String reverse = packedContent.reverse().toString();
+        List<Character> contentFromStack = buildContentFromStack(charStack);
         String unpackSizeFactor = buildUnpackSizeFactor(charStack);
         int size = Integer.parseInt(unpackSizeFactor);
-        String unpackContent = unpackContent(reverse, size);
-        unpackedContentReturnToStack(unpackContent, charStack);
+        List<Character> characters = unpackContent(contentFromStack, size);
+        characters.forEach(charStack::push);
     }
 
-    // TODO charArray ???
-    private StringBuilder buildPackedContent(Stack<Character> charStack) throws NoSuchSizePackingException {
-        StringBuilder contentBuilder = context.getBean("stringBuilder", StringBuilder.class);
+    private List<Character> buildContentFromStack(Stack<Character> charStack) throws NoSuchSizePackingException, NoOpenStringPackException {
+        List<Character> reversedContent = new ArrayList<>();
         while (!charStack.empty()){
             char pop = charStack.pop();
             if(pop == OPEN_PACK && charStack.empty()){
@@ -61,25 +52,18 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
             }else if(pop == OPEN_PACK){
                 break;
             } else {
-                contentBuilder.append(pop);
+                reversedContent.add(pop);
             }
         }
-        return contentBuilder;
-    }
-
-    private String unpackContent(String content, int size) throws NoSuchSizePackingException {
-        if(size == 0){
-            throw new NoSuchSizePackingException();
+        if(charStack.empty()){
+            throw new NoOpenStringPackException();
         }
-        StringBuilder unpackBuilder = context.getBean("stringBuilder", StringBuilder.class);
-        while (size-->0){
-            unpackBuilder.append(content);
-        }
-        return unpackBuilder.toString();
+        Collections.reverse(reversedContent);
+        return reversedContent;
     }
 
     private String buildUnpackSizeFactor(Stack<Character> charStack) throws NoSuchSizePackingException {
-        StringBuilder sizeBuilder = context.getBean("stringBuilder", StringBuilder.class);
+        StringBuilder sizeBuilder = new StringBuilder();
         while (!charStack.empty()){
             char peek = charStack.peek();
             if(!Character.isDigit(peek)){
@@ -97,14 +81,19 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
         return sizeBuilder.toString();
     }
 
-    private void unpackedContentReturnToStack(String unpack, Stack<Character> charStack){
-        for (char ch: unpack.toCharArray()){
-            charStack.push(ch);
+    private List<Character> unpackContent(List<Character> content, int size) throws NoSuchSizePackingException {
+        if(size == 0){
+            throw new NoSuchSizePackingException();
         }
+        List<Character> all = new ArrayList<>();
+        while (size-->0){
+            all.addAll(content);
+        }
+        return all;
     }
 
     private String buildUnpackedString(Stack<Character> stringContentStack) throws NoCloseStringPackException {
-        StringBuilder builderUnpackString = context.getBean("stringBuilder", StringBuilder.class);
+        StringBuilder builderUnpackString = new StringBuilder();
         for (Character element : stringContentStack) {
             if (element == OPEN_PACK) {
                 throw new NoCloseStringPackException();
@@ -112,10 +101,5 @@ class UnpackingImpl implements Unpacking, ApplicationContextAware {
             builderUnpackString.append(element);
         }
         return builderUnpackString.toString();
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext context) throws BeansException {
-        this.context = context;
     }
 }
