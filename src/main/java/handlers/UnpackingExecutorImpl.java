@@ -1,5 +1,6 @@
 package handlers;
 
+import exceptions.InvalidCharacterException;
 import exceptions.NoCloseStringPackException;
 import exceptions.NoOpenStringPackException;
 import exceptions.NoSuchSizePackingException;
@@ -39,7 +40,7 @@ class UnpackingExecutorImpl implements UnpackingExecutor, ApplicationContextAwar
             try {
                 String unpack = unpacking.unpack(packedString);
                 printer.print("unpack: " + unpack);
-            } catch (NoOpenStringPackException | NoCloseStringPackException | NoSuchSizePackingException exception) {
+            } catch (NoOpenStringPackException | NoCloseStringPackException | NoSuchSizePackingException | InvalidCharacterException exception) {
                 printer.printError(exception.toString());
             } catch (NumberFormatException exception){
                 printer.printError(exception+" - this unpacking factor beyond reasonable limits.");

@@ -1,5 +1,6 @@
 package handlers;
 
+import exceptions.InvalidCharacterException;
 import exceptions.NoCloseStringPackException;
 import exceptions.NoOpenStringPackException;
 import exceptions.NoSuchSizePackingException;
@@ -17,22 +18,30 @@ class UnpackingImpl implements Unpacking {
     private static final char CLOSE_PACK = ']';
 
     @Override
-    public String unpack(String packedString) throws NoCloseStringPackException, NoOpenStringPackException, NoSuchSizePackingException {
+    public String unpack(String packedString) throws NoCloseStringPackException, NoOpenStringPackException, NoSuchSizePackingException, InvalidCharacterException {
         char[] packedStringAsCharsArray = packedString.toCharArray();
         Stack<Character> unpackedCharsStack = createUnpackedCharsStack(packedStringAsCharsArray);
         return buildUnpackedString(unpackedCharsStack);
     }
 
-    private Stack<Character> createUnpackedCharsStack(char[] charArray) throws NoOpenStringPackException, NoSuchSizePackingException {
+    private Stack<Character> createUnpackedCharsStack(char[] charArray) throws NoOpenStringPackException, NoSuchSizePackingException,
+            InvalidCharacterException {
         Stack<Character> charsStack = new Stack<>();
         for (char ch : charArray) {
             if (ch == CLOSE_PACK) {
                 unpackContentToStack(charsStack);
-            } else {
+            } else if(isValid(ch)){
                 charsStack.push(ch);
+            } else {
+                throw new InvalidCharacterException();
             }
         }
         return charsStack;
+    }
+
+    private boolean isValid(char ch){
+        return (Character.isAlphabetic(ch) || Character.isDigit(ch) || ch == OPEN_PACK || ch == CLOSE_PACK) &&
+                Character.UnicodeBlock.of(ch).equals(Character.UnicodeBlock.BASIC_LATIN);
     }
 
     private void unpackContentToStack(Stack<Character> charStack) throws NoOpenStringPackException, NoSuchSizePackingException {
